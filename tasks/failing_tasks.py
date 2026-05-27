@@ -20,7 +20,7 @@ def always_fails(self, job_id: str) -> None:
     3. Dead-letter queue receiving the failed job
     """
     logger.info(f"Attempting job {job_id} (will fail)...")
-    countdown = 2 ** self.request.retries
+    countdown = self.get_backoff_with_jitter()
     raise self.retry(
         exc=RuntimeError(f"Intentional failure for job {job_id}"),
         countdown=countdown

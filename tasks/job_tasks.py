@@ -30,7 +30,7 @@ def send_email(self, recipient: str, subject: str, body: str) -> dict:
 
     except Exception as exc:
         # Exponential backoff: 2^retry seconds (2, 4, 8, 16, 32)
-        countdown = 2 ** self.request.retries
+        countdown = self.get_backoff_with_jitter()
         raise self.retry(exc=exc, countdown=countdown)
 
 
@@ -61,7 +61,7 @@ def process_data(self, dataset_id: str, operation: str) -> dict:
         }
 
     except Exception as exc:
-        countdown = 2 ** self.request.retries
+        countdown = self.get_backoff_with_jitter()
         raise self.retry(exc=exc, countdown=countdown)
 
 
@@ -91,5 +91,5 @@ def generate_report(self, report_type: str, date_range: str) -> dict:
         }
 
     except Exception as exc:
-        countdown = 2 ** self.request.retries
+        countdown = self.get_backoff_with_jitter()
         raise self.retry(exc=exc, countdown=countdown)

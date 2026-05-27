@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Task Queue Dashboard</title>
+  <meta http-equiv="refresh" content="5">
+  <style>
+    body { font-family: monospace; background: #0f0f0f; color: #e0e0e0; padding: 2rem; }
+    h1 { color: #00ff88; }
+    h2 { color: #00aaff; border-bottom: 1px solid #333; padding-bottom: 4px; }
+    .grid { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 2rem; }
+    .card { background: #1a1a1a; border: 1px solid #333; border-radius: 8px; padding: 1rem 2rem; min-width: 140px; }
+    .card .label { font-size: 0.8rem; color: #888; }
+    .card .value { font-size: 2rem; font-weight: bold; color: #00ff88; }
+    .card.warn .value { color: #ffaa00; }
+    .card.danger .value { color: #ff4444; }
+    table { width: 100%; border-collapse: collapse; }
+    th { background: #1a1a1a; color: #00aaff; text-align: left; padding: 8px; }
+    td { padding: 8px; border-bottom: 1px solid #222; font-size: 0.85rem; }
+    tr:hover td { background: #1a1a1a; }
+    .tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; }
+    .tag.high { background: #ff444433; color: #ff6666; }
+    .tag.default { background: #ffaa0033; color: #ffcc44; }
+    .tag.low { background: #00aaff33; color: #44ccff; }
+    .refresh { color: #555; font-size: 0.8rem; }
+  </style>
+</head>
+<body>
+  <h1>⚙ Task Queue System — Admin Dashboard</h1>
+  <p class="refresh">Auto-refreshes every 5 seconds</p>
+
+  <h2>Queue Depths</h2>
+  <div class="grid" id="queue-cards">Loading...</div>
+
+  <h2>Worker Status</h2>
+  <div class="grid" id="worker-cards">Loading...</div>
+
+  <h2>Dead Letter Queue (<span id="dlq-count">0</span> entries)</h2>
+  <table>
+    <thead>
+      <tr><th>Task</th><th>Task ID</th><th>Error</th><th>Received At</th></tr>
+    </thead>
+    <tbody id="dlq-table"><tr><td colspan="4">Loading...</td></tr></tbody>
+  </table>
+
+  <script>
+    async function refresh() {
+      const res = await fetch('/api/stats');
+      const data = await res.json();
+
+      // Queue cards
+      const q = data.queues;
+      document.getElementById('queue-cards').innerHTML = `
+        <div class="card"><div class="label">HIGH queue</div><div class="value">${q.high}</div></div>
+        <div class="card"><div class="label">DEFAULT queue</div><div class="value">${q.default}</div></div>
+        <div class="card"><div class="label">LOW queue</div><div class="value">${q.low}</div></div>
+      `;
+
+      // Worker cards
+      document.getElementById('worker-cards').innerHTML = `
+        <div class="card"><div class="label">Active tasks</div><div class="value ${data.active_tasks > 0 ? 'warn' : ''}">${data.active_tasks}</div></div>
+        <div class="card"><div class="label">Pending tasks</div><div class="value">${data.pending_tasks}</div></div>
+        <div class="card danger"><div class="label">DLQ entries</div><div class="value">${data.dlq_count}</div></div>
+      `;
+
+      // DLQ table
+      document.getElementById('dlq-count').textContent = data.dlq_count;
+      const rows = data.dlq_entries.map(e => `
+        <tr>
+          <td><span class="tag default">${e.task_name}</span></td>
+          <td style="color:#555">${e.task_id.slice(0,8)}...</td>
+          <td style="color:#ff6666">${e.error}</td>
+          <td>${e.received_at}</td>
+        </tr>
+      `).join('') || '<tr><td colspan="4" style="color:#555">No failed tasks</td></tr>';
+      document.getElementById('dlq-table').innerHTML = rows;
+    }
+
+    refresh();
+    setInterval(refresh, 5000);
+  </script>
+</body>
+</html>

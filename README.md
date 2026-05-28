@@ -1,4 +1,4 @@
-<p align="center">
+<div align="center">
 
 # ⚙️ Distributed Task Queue System
 
@@ -13,7 +13,7 @@ A production-grade background job processor built with **Celery + Redis**, demon
 
 > Load tested at **3,648 tasks/sec** across **10,000 concurrent jobs** with **zero message loss**.
 
-</p>
+</div>
 
 ---
 
